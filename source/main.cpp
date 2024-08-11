@@ -22,16 +22,28 @@
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-const int SPEED = 10;
-
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 SDL_GameController *controller = nullptr;
 
-Mix_Music *music = NULL;
-Mix_Chunk *sounds[4] = {NULL};
+bool isGamePaused = false;
+int shouldCloseTheGame = 0;
+int trail = 0;
+int wait = 0;
 
-SDL_Rect helloworld_rect;
+const int PLAYER_SPEED = 600;
+
+int logoVelocityX = 3;
+int logoVelocityY = 3;
+
+int colorIndex = 0;
+int soundIndex = 0;
+
+Mix_Music *music = nullptr;
+Mix_Chunk *sounds[4] = {nullptr};
+
+SDL_Texture *pauseGameTexture = nullptr;
+SDL_Rect pauseGameBounds;
 
 SDL_Color colors[] = {
     {128, 128, 128, 0}, // gray
@@ -44,15 +56,41 @@ SDL_Color colors[] = {
     {255, 0, 255, 0},   // purple
 };
 
-int quitGame = 0;
-int trail = 0;
-int wait = 25;
-
 typedef struct
 {
     SDL_Texture *texture;
     SDL_Rect textureBounds;
 } Sprite;
+
+Sprite playerSprite;
+
+Sprite switchlogoSprite;
+
+void quitGame()
+{
+    // clean up your textures when you are done with them
+    SDL_DestroyTexture(switchlogoSprite.texture);
+    SDL_DestroyTexture(pauseGameTexture);
+
+    // stop sounds and free loaded data
+    Mix_HaltChannel(-1);
+    Mix_FreeMusic(music);
+
+    for (soundIndex = 0; soundIndex < 4; soundIndex++)
+    {
+        if (sounds[soundIndex])
+        {
+            Mix_FreeChunk(sounds[soundIndex]);
+        }
+    }
+
+    IMG_Quit();
+    Mix_CloseAudio();
+    TTF_Quit();
+    Mix_Quit();
+    SDL_Quit();
+    romfsExit();
+}
 
 void handleEvents()
 {
@@ -62,14 +100,20 @@ void handleEvents()
     {
         if (event.type == SDL_QUIT)
         {
-            quitGame = 1;
+            shouldCloseTheGame = 1;
         }
 
         if (event.type == SDL_JOYBUTTONDOWN)
         {
+            if (event.jbutton.button == JOY_MINUS)
+            {
+                shouldCloseTheGame = 1;
+            }
+
             if (event.jbutton.button == JOY_PLUS)
             {
-                quitGame = 1;
+                isGamePaused = !isGamePaused;
+                Mix_PlayChannel(-1, sounds[0], 0);
             }
 
             if (event.jbutton.button == JOY_A)
@@ -162,14 +206,81 @@ Mix_Chunk *loadSound(const char *filePath)
     return sounds;
 }
 
+int rand_range(int min, int max)
+{
+    return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+}
+
+void update(float deltaTime)
+{
+    if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) && playerSprite.textureBounds.y > 0)
+    {
+        playerSprite.textureBounds.y -= PLAYER_SPEED * deltaTime;
+    }
+
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) && playerSprite.textureBounds.y < SCREEN_HEIGHT - playerSprite.textureBounds.h)
+    {
+        playerSprite.textureBounds.y += PLAYER_SPEED * deltaTime;
+    }
+
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && playerSprite.textureBounds.x > 0)
+    {
+        playerSprite.textureBounds.x -= PLAYER_SPEED * deltaTime;
+    }
+
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && playerSprite.textureBounds.x < SCREEN_WIDTH - playerSprite.textureBounds.w)
+    {
+        playerSprite.textureBounds.x += PLAYER_SPEED * deltaTime;
+    }
+
+    if (switchlogoSprite.textureBounds.x + switchlogoSprite.textureBounds.w > SCREEN_WIDTH || switchlogoSprite.textureBounds.x < 0)
+    {
+        logoVelocityX *= -1;
+        colorIndex = rand_range(0, 4);
+        soundIndex = rand_range(0, 3);
+
+        Mix_PlayChannel(-1, sounds[soundIndex], 0);
+    }
+
+    if (switchlogoSprite.textureBounds.y + switchlogoSprite.textureBounds.h > SCREEN_HEIGHT || switchlogoSprite.textureBounds.y < 0)
+    {
+        logoVelocityY *= -1;
+        colorIndex = rand_range(0, 4);
+        soundIndex = rand_range(0, 3);
+
+        Mix_PlayChannel(-1, sounds[soundIndex], 0);
+    }
+
+    // set position and bounce on the walls
+    switchlogoSprite.textureBounds.x += logoVelocityX;
+    switchlogoSprite.textureBounds.y += logoVelocityY;
+}
+
 void renderSprite(Sprite sprite)
 {
     SDL_RenderCopy(renderer, sprite.texture, NULL, &sprite.textureBounds);
 }
 
-int rand_range(int min, int max)
+void render()
 {
-    return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+    if (!trail)
+    {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+        SDL_RenderClear(renderer);
+    }
+
+    SDL_SetTextureColorMod(switchlogoSprite.texture, colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b);
+    renderSprite(switchlogoSprite);
+
+    renderSprite(playerSprite);
+
+    if (isGamePaused)
+    {
+        // put text on screen
+        SDL_RenderCopy(renderer, pauseGameTexture, NULL, &pauseGameBounds);
+    }
+
+    SDL_RenderPresent(renderer);
 }
 
 int main(int argc, char **argv)
@@ -208,19 +319,17 @@ int main(int argc, char **argv)
         }
     }
 
-    Sprite playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
     TTF_Font *font = TTF_OpenFont("data/LeroyLetteringLightBeta01.ttf", 36);
 
-    SDL_Texture *helloworld_tex = nullptr;
-
     // render text as texture
-    updateTextureText(helloworld_tex, "Hello, world!", font, renderer);
+    updateTextureText(pauseGameTexture, "Game Paused", font, renderer);
 
-    SDL_QueryTexture(helloworld_tex, NULL, NULL, &helloworld_rect.w, &helloworld_rect.h);
-    helloworld_rect.x = SCREEN_WIDTH / 2 - helloworld_rect.w / 2;
-    helloworld_rect.y = SCREEN_HEIGHT / 2 - helloworld_rect.h / 2;
+    SDL_QueryTexture(pauseGameTexture, NULL, NULL, &pauseGameBounds.w, &pauseGameBounds.h);
+    pauseGameBounds.x = SCREEN_WIDTH / 2 - pauseGameBounds.w / 2;
+    pauseGameBounds.y = 200;
 
     // no need to keep the font loaded
     TTF_CloseFont(font);
@@ -235,130 +344,36 @@ int main(int argc, char **argv)
 
     Mix_PlayMusic(music, -1);
 
-    Sprite switchlogo_tex = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    switchlogoSprite = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     srand(time(NULL));
 
-    int velocityX = rand_range(1, 5);
-    int velocityY = rand_range(1, 5);
-
-    int colorIndex = 0, soundIndex = 0;
-
     colorIndex = rand_range(0, 7);
 
-    while (!quitGame && appletMainLoop())
+    Uint32 previousFrameTime = SDL_GetTicks();
+    Uint32 currentFrameTime = previousFrameTime;
+    float deltaTime = 0.0f;
+
+    while (!shouldCloseTheGame && appletMainLoop())
     {
+        currentFrameTime = SDL_GetTicks();
+        deltaTime = (currentFrameTime - previousFrameTime) / 1000.0f;
+        previousFrameTime = currentFrameTime;
+
         SDL_GameControllerUpdate();
 
         handleEvents();
 
-        if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) && playerSprite.textureBounds.y > 0)
+        if (!isGamePaused)
         {
-            playerSprite.textureBounds.y -= SPEED;
+            update(deltaTime);
         }
 
-        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) && playerSprite.textureBounds.y < SCREEN_HEIGHT - playerSprite.textureBounds.h)
-        {
-            playerSprite.textureBounds.y += SPEED;
-        }
+        render();
 
-        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && playerSprite.textureBounds.x > 0)
-        {
-            playerSprite.textureBounds.x -= SPEED;
-        }
-
-        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && playerSprite.textureBounds.x < SCREEN_WIDTH - playerSprite.textureBounds.w)
-        {
-            playerSprite.textureBounds.x += SPEED;
-        }
-
-        if (switchlogo_tex.textureBounds.x + switchlogo_tex.textureBounds.w > SCREEN_WIDTH)
-        {
-            switchlogo_tex.textureBounds.x = SCREEN_WIDTH - switchlogo_tex.textureBounds.w;
-
-            velocityX = -rand_range(1, 5);
-            colorIndex = rand_range(0, 4);
-            soundIndex = rand_range(0, 3);
-
-            Mix_PlayChannel(-1, sounds[soundIndex], 0);
-        }
-
-        if (switchlogo_tex.textureBounds.x < 0)
-        {
-            switchlogo_tex.textureBounds.x = 0;
-
-            velocityX = rand_range(1, 5);
-            colorIndex = rand_range(0, 4);
-            soundIndex = rand_range(0, 3);
-
-            Mix_PlayChannel(-1, sounds[soundIndex], 0);
-        }
-
-        if (switchlogo_tex.textureBounds.y + switchlogo_tex.textureBounds.h > SCREEN_HEIGHT)
-        {
-            switchlogo_tex.textureBounds.y = SCREEN_HEIGHT - switchlogo_tex.textureBounds.h;
-
-            velocityY = -rand_range(1, 5);
-            colorIndex = rand_range(0, 4);
-            soundIndex = rand_range(0, 3);
-
-            Mix_PlayChannel(-1, sounds[soundIndex], 0);
-        }
-
-        if (switchlogo_tex.textureBounds.y < 0)
-        {
-            switchlogo_tex.textureBounds.y = 0;
-
-            velocityY = rand_range(1, 5);
-            colorIndex = rand_range(0, 4);
-            soundIndex = rand_range(0, 3);
-
-            Mix_PlayChannel(-1, sounds[soundIndex], 0);
-        }
-
-        // set position and bounce on the walls
-        switchlogo_tex.textureBounds.x += velocityX;
-        switchlogo_tex.textureBounds.y += velocityY;
-
-        if (!trail)
-        {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-            SDL_RenderClear(renderer);
-        }
-
-        renderSprite(playerSprite);
-
-        SDL_SetTextureColorMod(switchlogo_tex.texture, colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b);
-        renderSprite(switchlogo_tex);
-
-        // put text on screen
-        SDL_RenderCopy(renderer, helloworld_tex, NULL, &helloworld_rect);
-
-        SDL_RenderPresent(renderer);
         SDL_Delay(wait);
     }
 
-    // clean up your textures when you are done with them
-    SDL_DestroyTexture(switchlogo_tex.texture);
-    SDL_DestroyTexture(helloworld_tex);
-
-    // stop sounds and free loaded data
-    Mix_HaltChannel(-1);
-    Mix_FreeMusic(music);
-
-    for (soundIndex = 0; soundIndex < 4; soundIndex++)
-    {
-        if (sounds[soundIndex])
-        {
-            Mix_FreeChunk(sounds[soundIndex]);
-        }
-    }
-
-    IMG_Quit();
-    Mix_CloseAudio();
-    TTF_Quit();
-    Mix_Quit();
-    SDL_Quit();
-    romfsExit();
+    quitGame();
     return 0;
 }
