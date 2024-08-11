@@ -24,6 +24,7 @@ const int SCREEN_HEIGHT = 720;
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
+SDL_GameController *controller = nullptr;
 
 Mix_Music *music = NULL;
 Mix_Chunk *sounds[4] = {NULL};
@@ -45,6 +46,15 @@ int quitGame = 0;
 int trail = 0;
 int wait = 25;
 
+typedef struct
+{
+    SDL_Texture *texture;
+    SDL_Rect textureBounds;
+} Sprite;
+
+Sprite playerSprite;
+const int SPEED = 5;
+
 void handleEvents()
 {
     SDL_Event event;
@@ -58,17 +68,36 @@ void handleEvents()
         if (event.type == SDL_JOYBUTTONDOWN)
         {
             if (event.jbutton.button == JOY_UP)
+            {
                 if (wait > 0)
                     wait--;
+            }
+
             if (event.jbutton.button == JOY_DOWN)
+            {
                 if (wait < 100)
                     wait++;
+            }
 
             if (event.jbutton.button == JOY_PLUS)
+            {
                 quitGame = 1;
+            }
 
             if (event.jbutton.button == JOY_B)
+            {
                 trail = !trail;
+            }
+        }
+
+        if (event.jbutton.button == JOY_RIGHT)
+        {
+            playerSprite.textureBounds.x += 1;
+        }
+
+        if (event.jbutton.button == JOY_LEFT)
+        {
+            playerSprite.textureBounds.x -= 1;
         }
     }
 }
@@ -100,12 +129,6 @@ void updateTextureText(SDL_Texture *&texture, const char *text, TTF_Font *&fontS
 
     SDL_FreeSurface(surface);
 }
-
-typedef struct
-{
-    SDL_Texture *texture;
-    SDL_Rect textureBounds;
-} Sprite;
 
 Sprite loadSprite(SDL_Renderer *renderer, const char *filePath, int positionX, int positionY)
 {
@@ -180,11 +203,30 @@ int main(int argc, char **argv)
     Mix_AllocateChannels(5);
     Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 
+    if (SDL_NumJoysticks() < 1)
+    {
+        printf("No game controllers connected!\n");
+        return -1;
+    }
+    else
+    {
+
+        controller = SDL_GameControllerOpen(0);
+        if (controller == NULL)
+        {
+
+            printf("Unable to open game controller! SDL Error: %s\n", SDL_GetError());
+            return -1;
+        }
+    }
+
+    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+
     // load font from romfs
     TTF_Font *font = TTF_OpenFont("data/LeroyLetteringLightBeta01.ttf", 36);
 
     SDL_Texture *helloworld_tex = nullptr;
-    
+
     // render text as texture
     updateTextureText(helloworld_tex, "Hello, world!", font, renderer);
 
@@ -218,7 +260,29 @@ int main(int argc, char **argv)
 
     while (!quitGame && appletMainLoop())
     {
+        SDL_GameControllerUpdate();
+
         handleEvents();
+
+        if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) && playerSprite.textureBounds.y > 0)
+        {
+            playerSprite.textureBounds.y -= SPEED;
+        }
+
+        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) && playerSprite.textureBounds.y < SCREEN_HEIGHT - playerSprite.textureBounds.h)
+        {
+            playerSprite.textureBounds.y += SPEED;
+        }
+
+        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && playerSprite.textureBounds.x > 0)
+        {
+            playerSprite.textureBounds.x -= SPEED;
+        }
+
+        else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && playerSprite.textureBounds.x < SCREEN_WIDTH - playerSprite.textureBounds.w)
+        {
+            playerSprite.textureBounds.x += SPEED;
+        }
 
         if (switchlogo_tex.textureBounds.x + switchlogo_tex.textureBounds.w > SCREEN_WIDTH)
         {
@@ -273,6 +337,8 @@ int main(int argc, char **argv)
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
             SDL_RenderClear(renderer);
         }
+
+        renderSprite(playerSprite);
 
         SDL_SetTextureColorMod(switchlogo_tex.texture, colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b);
         renderSprite(switchlogo_tex);
