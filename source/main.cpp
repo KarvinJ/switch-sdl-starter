@@ -22,6 +22,8 @@
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
+const int SPEED = 10;
+
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 SDL_GameController *controller = nullptr;
@@ -52,9 +54,6 @@ typedef struct
     SDL_Rect textureBounds;
 } Sprite;
 
-Sprite playerSprite;
-const int SPEED = 5;
-
 void handleEvents()
 {
     SDL_Event event;
@@ -62,42 +61,33 @@ void handleEvents()
     while (SDL_PollEvent(&event))
     {
         if (event.type == SDL_QUIT)
+        {
             quitGame = 1;
+        }
 
-        // use joystick
         if (event.type == SDL_JOYBUTTONDOWN)
         {
-            if (event.jbutton.button == JOY_UP)
+            if (event.jbutton.button == JOY_PLUS)
+            {
+                quitGame = 1;
+            }
+
+            if (event.jbutton.button == JOY_A)
             {
                 if (wait > 0)
                     wait--;
             }
 
-            if (event.jbutton.button == JOY_DOWN)
+            if (event.jbutton.button == JOY_X)
             {
                 if (wait < 100)
                     wait++;
-            }
-
-            if (event.jbutton.button == JOY_PLUS)
-            {
-                quitGame = 1;
             }
 
             if (event.jbutton.button == JOY_B)
             {
                 trail = !trail;
             }
-        }
-
-        if (event.jbutton.button == JOY_RIGHT)
-        {
-            playerSprite.textureBounds.x += 1;
-        }
-
-        if (event.jbutton.button == JOY_LEFT)
-        {
-            playerSprite.textureBounds.x -= 1;
         }
     }
 }
@@ -187,7 +177,7 @@ int main(int argc, char **argv)
     romfsInit();
     chdir("romfs:/");
 
-    window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -210,17 +200,15 @@ int main(int argc, char **argv)
     }
     else
     {
-
         controller = SDL_GameControllerOpen(0);
         if (controller == NULL)
         {
-
             printf("Unable to open game controller! SDL Error: %s\n", SDL_GetError());
             return -1;
         }
     }
 
-    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    Sprite playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
     TTF_Font *font = TTF_OpenFont("data/LeroyLetteringLightBeta01.ttf", 36);
