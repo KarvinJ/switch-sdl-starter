@@ -6,21 +6,8 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <switch.h>
-
-// some switch buttons
-#define JOY_A 0
-#define JOY_B 1
-#define JOY_X 2
-#define JOY_Y 3
-#define JOY_PLUS 10
-#define JOY_MINUS 11
-#define JOY_LEFT 12
-#define JOY_UP 13
-#define JOY_RIGHT 14
-#define JOY_DOWN 15
-
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 720;
+#include "sdl_starter.h"
+#include "sdl_assets_loader.h"
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
@@ -29,12 +16,15 @@ SDL_GameController *controller = nullptr;
 bool isGamePaused = false;
 int shouldCloseTheGame = 0;
 int trail = 0;
-int wait = 0;
+int wait = 15;
+
+Sprite playerSprite;
+Sprite switchlogoSprite;
 
 const int PLAYER_SPEED = 600;
 
-int logoVelocityX = 3;
-int logoVelocityY = 3;
+int logoVelocityX = 300;
+int logoVelocityY = 300;
 
 int colorIndex = 0;
 int soundIndex = 0;
@@ -55,16 +45,6 @@ SDL_Color colors[] = {
     {0, 255, 255, 0},   // cyan
     {255, 0, 255, 0},   // purple
 };
-
-typedef struct
-{
-    SDL_Texture *texture;
-    SDL_Rect textureBounds;
-} Sprite;
-
-Sprite playerSprite;
-
-Sprite switchlogoSprite;
 
 void quitGame()
 {
@@ -136,76 +116,6 @@ void handleEvents()
     }
 }
 
-void updateTextureText(SDL_Texture *&texture, const char *text, TTF_Font *&fontSquare, SDL_Renderer *renderer)
-{
-    SDL_Color fontColor = {255, 255, 255};
-
-    if (fontSquare == nullptr)
-    {
-        printf("TTF_OpenFont fontSquare: %s\n", TTF_GetError());
-    }
-
-    SDL_Surface *surface = TTF_RenderUTF8_Blended(fontSquare, text, fontColor);
-    if (surface == nullptr)
-    {
-        printf("TTF_OpenFont: %s\n", TTF_GetError());
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unable to create text surface! SDL Error: %s\n", SDL_GetError());
-        exit(3);
-    }
-
-    SDL_DestroyTexture(texture);
-    texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (texture == nullptr)
-    {
-        printf("TTF_OpenFont: %s\n", TTF_GetError());
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unable to create texture from surface! SDL Error: %s\n", SDL_GetError());
-    }
-
-    SDL_FreeSurface(surface);
-}
-
-Sprite loadSprite(SDL_Renderer *renderer, const char *filePath, int positionX, int positionY)
-{
-    SDL_Rect textureBounds = {positionX, positionY, 0, 0};
-
-    SDL_Texture *texture = IMG_LoadTexture(renderer, filePath);
-
-    if (texture != nullptr)
-    {
-        SDL_QueryTexture(texture, NULL, NULL, &textureBounds.w, &textureBounds.h);
-    }
-
-    Sprite sprite = {texture, textureBounds};
-
-    return sprite;
-}
-
-Mix_Music *loadMusic(const char *filePath)
-{
-    Mix_Music *music = nullptr;
-
-    music = Mix_LoadMUS(filePath);
-    if (music == nullptr)
-    {
-        printf("Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
-    }
-
-    return music;
-}
-
-Mix_Chunk *loadSound(const char *filePath)
-{
-    Mix_Chunk *sounds = nullptr;
-
-    sounds = Mix_LoadWAV(filePath);
-    if (sounds == nullptr)
-    {
-        printf("Failed to load scratch sounds effect! SDL_mixer Error: %s\n", Mix_GetError());
-    }
-
-    return sounds;
-}
-
 int rand_range(int min, int max)
 {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
@@ -252,8 +162,8 @@ void update(float deltaTime)
     }
 
     // set position and bounce on the walls
-    switchlogoSprite.textureBounds.x += logoVelocityX;
-    switchlogoSprite.textureBounds.y += logoVelocityY;
+    switchlogoSprite.textureBounds.x += logoVelocityX * deltaTime;
+    switchlogoSprite.textureBounds.y += logoVelocityY * deltaTime;
 }
 
 void renderSprite(Sprite sprite)
@@ -285,24 +195,13 @@ void render()
 
 int main(int argc, char **argv)
 {
-    romfsInit();
-    chdir("romfs:/");
-
     window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
-    Mix_Init(MIX_INIT_OGG);
-    IMG_Init(IMG_INIT_PNG);
-    TTF_Init();
-
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
-    SDL_JoystickEventState(SDL_ENABLE);
-    SDL_JoystickOpen(0);
-
-    SDL_InitSubSystem(SDL_INIT_AUDIO);
-    Mix_AllocateChannels(5);
-    Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
+    if (startSDL(window, renderer) > 0)
+    {
+        return 1;
+    }
 
     if (SDL_NumJoysticks() < 1)
     {
@@ -320,6 +219,7 @@ int main(int argc, char **argv)
     }
 
     playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    switchlogoSprite = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
     TTF_Font *font = TTF_OpenFont("data/LeroyLetteringLightBeta01.ttf", 36);
@@ -343,8 +243,6 @@ int main(int argc, char **argv)
     music = loadMusic("data/background.ogg");
 
     Mix_PlayMusic(music, -1);
-
-    switchlogoSprite = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     srand(time(NULL));
 
