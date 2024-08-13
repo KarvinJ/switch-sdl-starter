@@ -23,8 +23,8 @@ Sprite switchlogoSprite;
 
 const int PLAYER_SPEED = 600;
 
-int logoVelocityX = 300;
-int logoVelocityY = 300;
+int logoVelocityX = 250;
+int logoVelocityY = 250;
 
 int colorIndex = 0;
 int soundIndex = 0;
@@ -143,6 +143,17 @@ void update(float deltaTime)
         playerSprite.textureBounds.x += PLAYER_SPEED * deltaTime;
     }
 
+    if (SDL_HasIntersection(&playerSprite.textureBounds, &switchlogoSprite.textureBounds))
+    {
+        logoVelocityX *= -1;
+        logoVelocityY *= -1;
+
+        colorIndex = rand_range(0, 4);
+        soundIndex = rand_range(0, 3);
+
+        Mix_PlayChannel(-1, sounds[soundIndex], 0);
+    }
+
     if (switchlogoSprite.textureBounds.x + switchlogoSprite.textureBounds.w > SCREEN_WIDTH || switchlogoSprite.textureBounds.x < 0)
     {
         logoVelocityX *= -1;
@@ -218,7 +229,7 @@ int main(int argc, char **argv)
         }
     }
 
-    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2);
     switchlogoSprite = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
@@ -245,8 +256,6 @@ int main(int argc, char **argv)
     Mix_PlayMusic(music, -1);
 
     srand(time(NULL));
-
-    colorIndex = rand_range(0, 7);
 
     Uint32 previousFrameTime = SDL_GetTicks();
     Uint32 currentFrameTime = previousFrameTime;
