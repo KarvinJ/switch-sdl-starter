@@ -1,11 +1,8 @@
 #include <time.h>
-#include <unistd.h>
-
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <switch.h>
 #include "sdl_starter.h"
 #include "sdl_assets_loader.h"
 
@@ -13,8 +10,8 @@ SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 SDL_GameController *controller = nullptr;
 
-bool isGamePaused = false;
-int shouldCloseTheGame = 0;
+bool isGamePaused;
+int shouldCloseTheGame;
 int trail = 0;
 int wait = 15;
 
@@ -282,5 +279,4 @@ int main(int argc, char **argv)
     }
 
     quitGame();
-    return 0;
 }
