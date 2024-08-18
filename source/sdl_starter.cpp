@@ -1,4 +1,9 @@
 #include "sdl_starter.h"
+#include <SDL_mixer.h>
+#include <SDL_image.h>
+#include <SDL_ttf.h>
+#include <switch.h>
+#include <iostream>
 
 int startSDL(SDL_Window *window, SDL_Renderer *renderer)
 {

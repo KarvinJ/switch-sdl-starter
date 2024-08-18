@@ -1,8 +1,4 @@
 #include <time.h>
-#include <SDL.h>
-#include <SDL_mixer.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
 #include "sdl_starter.h"
 #include "sdl_assets_loader.h"
 
