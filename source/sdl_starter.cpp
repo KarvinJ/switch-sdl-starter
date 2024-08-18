@@ -2,7 +2,6 @@
 #include <SDL_mixer.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <switch.h>
 #include <iostream>
 
 int startSDL(SDL_Window *window, SDL_Renderer *renderer)
@@ -15,7 +14,7 @@ int startSDL(SDL_Window *window, SDL_Renderer *renderer)
         std::cout << "SDL crashed. Error: " << SDL_GetError();
         return 1;
     }
-
+    
     if (window == nullptr)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
