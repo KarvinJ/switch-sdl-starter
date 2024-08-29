@@ -222,11 +222,11 @@ int main(int argc, char **argv)
         }
     }
 
-    playerSprite = loadSprite(renderer, "data/alien_1.png", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2);
-    switchlogoSprite = loadSprite(renderer, "data/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    playerSprite = loadSprite(renderer, "sprites/alien_1.png", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2);
+    switchlogoSprite = loadSprite(renderer, "sprites/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
-    TTF_Font *font = TTF_OpenFont("data/LeroyLetteringLightBeta01.ttf", 36);
+    TTF_Font *font = TTF_OpenFont("fonts/LeroyLetteringLightBeta01.ttf", 36);
 
     // render text as texture
     updateTextureText(pauseGameTexture, "Game Paused", font, renderer);
@@ -239,12 +239,12 @@ int main(int argc, char **argv)
     TTF_CloseFont(font);
 
     // load music and sounds from files
-    sounds[0] = loadSound("data/pop1.wav");
-    sounds[1] = loadSound("data/pop2.wav");
-    sounds[2] = loadSound("data/pop3.wav");
-    sounds[3] = loadSound("data/pop4.wav");
+    sounds[0] = loadSound("sounds/pop1.wav");
+    sounds[1] = loadSound("sounds/pop2.wav");
+    sounds[2] = loadSound("sounds/pop3.wav");
+    sounds[3] = loadSound("sounds/pop4.wav");
 
-    music = loadMusic("data/background.ogg");
+    music = loadMusic("music/background.ogg");
 
     Mix_PlayMusic(music, -1);
 
