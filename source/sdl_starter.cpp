@@ -6,9 +6,6 @@
 
 int startSDL(SDL_Window *window, SDL_Renderer *renderer)
 {
-    romfsInit();
-    chdir("romfs:/");
-
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0)
     {
         std::cout << "SDL crashed. Error: " << SDL_GetError();

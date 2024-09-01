@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SDL.h>
-#include <switch.h>
 
 // some switch buttons
 #define JOY_A 0

@@ -1,6 +1,8 @@
-#include <time.h>
 #include "sdl_starter.h"
 #include "sdl_assets_loader.h"
+#include <time.h>
+#include <switch.h>
+#include <iostream>
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
@@ -74,6 +76,7 @@ void handleEvents()
         if (event.type == SDL_QUIT)
         {
             shouldCloseTheGame = 1;
+            break;
         }
 
         if (event.type == SDL_JOYBUTTONDOWN)
@@ -81,6 +84,7 @@ void handleEvents()
             if (event.jbutton.button == JOY_MINUS)
             {
                 shouldCloseTheGame = 1;
+                break;
             }
 
             if (event.jbutton.button == JOY_PLUS)
@@ -199,6 +203,9 @@ void render()
 
 int main(int argc, char **argv)
 {
+    romfsInit();
+    chdir("romfs:/");
+
     window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
