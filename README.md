@@ -1,6 +1,6 @@
 # SWITCH SDL2 STARTER
 
-A Nintendo Switch SDL2 STARTER.
+A Nintendo Switch SDL2 starter template.
 
 # Building
 
