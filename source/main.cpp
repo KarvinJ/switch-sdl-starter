@@ -30,6 +30,13 @@ Mix_Chunk *sounds[4] = {nullptr};
 SDL_Texture *pauseGameTexture = nullptr;
 SDL_Rect pauseGameBounds;
 
+SDL_Texture *scoreTexture = nullptr;
+SDL_Rect scoreBounds;
+
+int score;
+
+TTF_Font *font = nullptr;
+
 SDL_Color colors[] = {
     {128, 128, 128, 0}, // gray
     {255, 255, 255, 0}, // white
@@ -140,17 +147,6 @@ void update(float deltaTime)
         playerSprite.textureBounds.x += PLAYER_SPEED * deltaTime;
     }
 
-    if (SDL_HasIntersection(&playerSprite.textureBounds, &switchlogoSprite.textureBounds))
-    {
-        logoVelocityX *= -1;
-        logoVelocityY *= -1;
-
-        colorIndex = rand_range(0, 4);
-        soundIndex = rand_range(0, 3);
-
-        Mix_PlayChannel(-1, sounds[soundIndex], 0);
-    }
-
     if (switchlogoSprite.textureBounds.x + switchlogoSprite.textureBounds.w > SCREEN_WIDTH || switchlogoSprite.textureBounds.x < 0)
     {
         logoVelocityX *= -1;
@@ -167,6 +163,23 @@ void update(float deltaTime)
         soundIndex = rand_range(0, 3);
 
         Mix_PlayChannel(-1, sounds[soundIndex], 0);
+    }
+
+    if (SDL_HasIntersection(&playerSprite.textureBounds, &switchlogoSprite.textureBounds))
+    {
+        logoVelocityX *= -1;
+        logoVelocityY *= -1;
+
+        colorIndex = rand_range(0, 4);
+        soundIndex = rand_range(0, 3);
+
+        Mix_PlayChannel(-1, sounds[soundIndex], 0);
+
+        score++;
+
+        std::string scoreString = "SCORE: " + std::to_string(score);
+
+        updateTextureText(scoreTexture, scoreString.c_str(), font, renderer);
     }
 
     // set position and bounce on the walls
@@ -198,6 +211,11 @@ void render()
         SDL_RenderCopy(renderer, pauseGameTexture, NULL, &pauseGameBounds);
     }
 
+    SDL_QueryTexture(scoreTexture, NULL, NULL, &scoreBounds.w, &scoreBounds.h);
+    scoreBounds.x = SCREEN_WIDTH / 2 - pauseGameBounds.w / 2;
+    scoreBounds.y = scoreBounds.h / 2;
+    SDL_RenderCopy(renderer, scoreTexture, NULL, &scoreBounds);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -206,7 +224,7 @@ int main(int argc, char **argv)
     romfsInit();
     chdir("romfs:/");
 
-    window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (startSDL(window, renderer) > 0)
@@ -233,17 +251,19 @@ int main(int argc, char **argv)
     switchlogoSprite = loadSprite(renderer, "sprites/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
     // load font from romfs
-    TTF_Font *font = TTF_OpenFont("fonts/LeroyLetteringLightBeta01.ttf", 36);
+    font = TTF_OpenFont("fonts/LeroyLetteringLightBeta01.ttf", 36);
 
     // render text as texture
-    updateTextureText(pauseGameTexture, "Game Paused", font, renderer);
+    updateTextureText(scoreTexture, "SCORE: 0", font, renderer);
+
+    updateTextureText(pauseGameTexture, "GAME PAUSED", font, renderer);
 
     SDL_QueryTexture(pauseGameTexture, NULL, NULL, &pauseGameBounds.w, &pauseGameBounds.h);
     pauseGameBounds.x = SCREEN_WIDTH / 2 - pauseGameBounds.w / 2;
     pauseGameBounds.y = 200;
 
     // no need to keep the font loaded
-    TTF_CloseFont(font);
+    // TTF_CloseFont(font);
 
     // load music and sounds from files
     sounds[0] = loadSound("sounds/pop1.wav");
