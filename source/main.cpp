@@ -187,7 +187,7 @@ void update(float deltaTime)
     switchlogoSprite.textureBounds.y += logoVelocityY * deltaTime;
 }
 
-void renderSprite(Sprite sprite)
+void renderSprite(Sprite &sprite)
 {
     SDL_RenderCopy(renderer, sprite.texture, NULL, &sprite.textureBounds);
 }
