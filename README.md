@@ -18,8 +18,6 @@ I built everything using Windows 10
 
 *I recommend to install all the switch-portlibs libraries/
 
-* Clone this repo:  
-  `git clone https://github.com/ArkhamKnightXD/switch-sdl-starter.git`
-
-* `switch-sdl-starter`
+* Clone this repo
+* `cd switch-sdl-starter`
 * `make`
