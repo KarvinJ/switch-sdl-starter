@@ -45,7 +45,7 @@ INCLUDES	:=	include
 ROMFS		:=	romfs
 
 APP_TITLE   := Switch SDL2 Complete Starter
-APP_AUTHOR  := carstene1ns
+APP_AUTHOR  := knight
 
 #---------------------------------------------------------------------------------
 # options for code generation
