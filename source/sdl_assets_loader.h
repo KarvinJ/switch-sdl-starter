@@ -8,7 +8,7 @@
 typedef struct
 {
     SDL_Texture *texture;
-    SDL_Rect textureBounds;
+    SDL_Rect bounds;
 } Sprite;
 
 Sprite loadSprite(SDL_Renderer *renderer, const char *filePath, int positionX, int positionY);

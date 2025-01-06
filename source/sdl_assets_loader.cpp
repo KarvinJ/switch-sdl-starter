@@ -3,16 +3,16 @@
 
 Sprite loadSprite(SDL_Renderer *renderer, const char *filePath, int positionX, int positionY)
 {
-    SDL_Rect textureBounds = {positionX, positionY, 0, 0};
+    SDL_Rect bounds = {positionX, positionY, 0, 0};
 
     SDL_Texture *texture = IMG_LoadTexture(renderer, filePath);
 
     if (texture != nullptr)
     {
-        SDL_QueryTexture(texture, NULL, NULL, &textureBounds.w, &textureBounds.h);
+        SDL_QueryTexture(texture, NULL, NULL, &bounds.w, &bounds.h);
     }
 
-    Sprite sprite = {texture, textureBounds}; 
+    Sprite sprite = {texture, bounds}; 
 
     return sprite;
 }

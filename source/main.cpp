@@ -127,27 +127,27 @@ int rand_range(int min, int max)
 
 void update(float deltaTime)
 {
-    if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) && playerSprite.textureBounds.y > 0)
+    if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) && playerSprite.bounds.y > 0)
     {
-        playerSprite.textureBounds.y -= PLAYER_SPEED * deltaTime;
+        playerSprite.bounds.y -= PLAYER_SPEED * deltaTime;
     }
 
-    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) && playerSprite.textureBounds.y < SCREEN_HEIGHT - playerSprite.textureBounds.h)
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) && playerSprite.bounds.y < SCREEN_HEIGHT - playerSprite.bounds.h)
     {
-        playerSprite.textureBounds.y += PLAYER_SPEED * deltaTime;
+        playerSprite.bounds.y += PLAYER_SPEED * deltaTime;
     }
 
-    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && playerSprite.textureBounds.x > 0)
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && playerSprite.bounds.x > 0)
     {
-        playerSprite.textureBounds.x -= PLAYER_SPEED * deltaTime;
+        playerSprite.bounds.x -= PLAYER_SPEED * deltaTime;
     }
 
-    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && playerSprite.textureBounds.x < SCREEN_WIDTH - playerSprite.textureBounds.w)
+    else if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && playerSprite.bounds.x < SCREEN_WIDTH - playerSprite.bounds.w)
     {
-        playerSprite.textureBounds.x += PLAYER_SPEED * deltaTime;
+        playerSprite.bounds.x += PLAYER_SPEED * deltaTime;
     }
 
-    if (switchlogoSprite.textureBounds.x + switchlogoSprite.textureBounds.w > SCREEN_WIDTH || switchlogoSprite.textureBounds.x < 0)
+    if (switchlogoSprite.bounds.x + switchlogoSprite.bounds.w > SCREEN_WIDTH || switchlogoSprite.bounds.x < 0)
     {
         logoVelocityX *= -1;
         colorIndex = rand_range(0, 4);
@@ -156,7 +156,7 @@ void update(float deltaTime)
         Mix_PlayChannel(-1, sounds[soundIndex], 0);
     }
 
-    if (switchlogoSprite.textureBounds.y + switchlogoSprite.textureBounds.h > SCREEN_HEIGHT || switchlogoSprite.textureBounds.y < 0)
+    if (switchlogoSprite.bounds.y + switchlogoSprite.bounds.h > SCREEN_HEIGHT || switchlogoSprite.bounds.y < 0)
     {
         logoVelocityY *= -1;
         colorIndex = rand_range(0, 4);
@@ -165,7 +165,7 @@ void update(float deltaTime)
         Mix_PlayChannel(-1, sounds[soundIndex], 0);
     }
 
-    if (SDL_HasIntersection(&playerSprite.textureBounds, &switchlogoSprite.textureBounds))
+    if (SDL_HasIntersection(&playerSprite.bounds, &switchlogoSprite.bounds))
     {
         logoVelocityX *= -1;
         logoVelocityY *= -1;
@@ -183,13 +183,13 @@ void update(float deltaTime)
     }
 
     // set position and bounce on the walls
-    switchlogoSprite.textureBounds.x += logoVelocityX * deltaTime;
-    switchlogoSprite.textureBounds.y += logoVelocityY * deltaTime;
+    switchlogoSprite.bounds.x += logoVelocityX * deltaTime;
+    switchlogoSprite.bounds.y += logoVelocityY * deltaTime;
 }
 
 void renderSprite(Sprite &sprite)
 {
-    SDL_RenderCopy(renderer, sprite.texture, NULL, &sprite.textureBounds);
+    SDL_RenderCopy(renderer, sprite.texture, NULL, &sprite.bounds);
 }
 
 void render()
