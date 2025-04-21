@@ -231,22 +231,10 @@ int main(int argc, char **argv)
     {
         return 1;
     }
-
-    if (SDL_NumJoysticks() < 1)
-    {
-        printf("No game controllers connected!\n");
-        return -1;
-    }
-    else
-    {
-        controller = SDL_GameControllerOpen(0);
-        if (controller == NULL)
-        {
-            printf("Unable to open game controller! SDL Error: %s\n", SDL_GetError());
-            return -1;
-        }
-    }
-
+  
+    //the control is always connected in a handheld console.
+    controller = SDL_GameControllerOpen(0);
+   
     playerSprite = loadSprite(renderer, "sprites/alien_1.png", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2);
     switchlogoSprite = loadSprite(renderer, "sprites/switch.png", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
