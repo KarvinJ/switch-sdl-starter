@@ -1,5 +1,4 @@
 #include "sdl_starter.h"
-#include "sdl_assets_loader.h"
 #include <time.h>
 #include <switch.h>
 #include <iostream>
@@ -8,8 +7,8 @@ SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 SDL_GameController *controller = nullptr;
 
-bool isGamePaused;
-int shouldCloseTheGame;
+bool isGamePaused = false;
+int isGameRunning = true;
 int trail = 0;
 int wait = 15;
 
@@ -33,7 +32,7 @@ SDL_Rect pauseGameBounds;
 SDL_Texture *scoreTexture = nullptr;
 SDL_Rect scoreBounds;
 
-int score;
+int score = 0;
 
 TTF_Font *font = nullptr;
 
@@ -48,32 +47,6 @@ SDL_Color colors[] = {
     {255, 0, 255, 0},   // purple
 };
 
-void quitGame()
-{
-    // clean up your textures when you are done with them
-    SDL_DestroyTexture(switchlogoSprite.texture);
-    SDL_DestroyTexture(pauseGameTexture);
-
-    // stop sounds and free loaded data
-    Mix_HaltChannel(-1);
-    Mix_FreeMusic(music);
-
-    for (soundIndex = 0; soundIndex < 4; soundIndex++)
-    {
-        if (sounds[soundIndex])
-        {
-            Mix_FreeChunk(sounds[soundIndex]);
-        }
-    }
-
-    IMG_Quit();
-    Mix_CloseAudio();
-    TTF_Quit();
-    Mix_Quit();
-    SDL_Quit();
-    romfsExit();
-}
-
 void handleEvents()
 {
     SDL_Event event;
@@ -82,7 +55,7 @@ void handleEvents()
     {
         if (event.type == SDL_QUIT)
         {
-            shouldCloseTheGame = 1;
+            isGameRunning = false;
             break;
         }
 
@@ -90,7 +63,7 @@ void handleEvents()
         {
             if (event.jbutton.button == JOY_MINUS)
             {
-                shouldCloseTheGame = 1;
+                isGameRunning = false;
                 break;
             }
 
@@ -227,7 +200,7 @@ int main(int argc, char **argv)
     window = SDL_CreateWindow("sdl2 switch starter", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    if (startSDL(window, renderer) > 0)
+    if (startSDLSystems(window, renderer) > 0)
     {
         return 1;
     }
@@ -250,9 +223,6 @@ int main(int argc, char **argv)
     pauseGameBounds.x = SCREEN_WIDTH / 2 - pauseGameBounds.w / 2;
     pauseGameBounds.y = 200;
 
-    // no need to keep the font loaded
-    // TTF_CloseFont(font);
-
     // load music and sounds from files
     sounds[0] = loadSound("sounds/pop1.wav");
     sounds[1] = loadSound("sounds/pop2.wav");
@@ -269,7 +239,7 @@ int main(int argc, char **argv)
     Uint32 currentFrameTime = previousFrameTime;
     float deltaTime = 0.0f;
 
-    while (!shouldCloseTheGame && appletMainLoop())
+    while (isGameRunning && appletMainLoop())
     {
         currentFrameTime = SDL_GetTicks();
         deltaTime = (currentFrameTime - previousFrameTime) / 1000.0f;
@@ -289,5 +259,25 @@ int main(int argc, char **argv)
         SDL_Delay(wait);
     }
 
-    quitGame();
+    // clean up your textures when you are done with them
+    SDL_DestroyTexture(switchlogoSprite.texture);
+    SDL_DestroyTexture(pauseGameTexture);
+
+    // stop sounds and free loaded data
+    Mix_HaltChannel(-1);
+    Mix_FreeMusic(music);
+
+    for (soundIndex = 0; soundIndex < 4; soundIndex++)
+    {
+        if (sounds[soundIndex])
+        {
+            Mix_FreeChunk(sounds[soundIndex]);
+        }
+    }
+
+    stopSDLSystems();
+    Mix_CloseAudio();
+    romfsExit();
+
+    return 0;
 }
