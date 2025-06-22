@@ -245,8 +245,6 @@ int main(int argc, char **argv)
         deltaTime = (currentFrameTime - previousFrameTime) / 1000.0f;
         previousFrameTime = currentFrameTime;
 
-        SDL_GameControllerUpdate();
-
         handleEvents();
 
         if (!isGamePaused)
